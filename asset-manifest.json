@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/Ejercicios-de-gradiente-descendente/static/css/main.60d1d405.css",
+    "main.js": "/Ejercicios-de-gradiente-descendente/static/js/main.becd13eb.js",
+    "static/js/453.ba9db7cc.chunk.js": "/Ejercicios-de-gradiente-descendente/static/js/453.ba9db7cc.chunk.js",
+    "index.html": "/Ejercicios-de-gradiente-descendente/index.html",
+    "main.60d1d405.css.map": "/Ejercicios-de-gradiente-descendente/static/css/main.60d1d405.css.map",
+    "main.becd13eb.js.map": "/Ejercicios-de-gradiente-descendente/static/js/main.becd13eb.js.map",
+    "453.ba9db7cc.chunk.js.map": "/Ejercicios-de-gradiente-descendente/static/js/453.ba9db7cc.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.60d1d405.css",
+    "static/js/main.becd13eb.js"
+  ]
+}

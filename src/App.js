@@ -1,108 +1,106 @@
 import React, { useState } from 'react';
-import { derivative, parse } from 'mathjs'; // Asegúrate de tener mathjs instalado: npm install mathjs
-import './NewtonRaphson.css'; // Importa el archivo de estilo CSS
+import { derivative, parse } from 'mathjs';
+import './NewtonRaphson.css';
 
-const NewtonRaphson = () => {
-  // Estado para almacenar la función ingresada por el usuario
-  const [functionString, setFunctionString] = useState('-3 * x^2 + 12 * x + 100'); // Función inicial
-
-  // Estado para almacenar el valor de alpha
-  const [alpha, setAlpha] = useState(0.01); // Alpha inicial
-
-  // Estado para almacenar las iteraciones
+const App = () => {
+  const [coeffX2, setCoeffX2] = useState('');
+  const [coeffX, setCoeffX] = useState('');
+  const [constant, setConstant] = useState('');
+  const [alpha, setAlpha] = useState(0.01);
   const [iterations, setIterations] = useState([]);
-
-  // Estado para almacenar la expresión de la derivada
   const [derivativeExpression, setDerivativeExpression] = useState('');
-
-  // Estado para almacenar el último valor de x después de las iteraciones
   const [lastX, setLastX] = useState(null);
-
-  // Estado para almacenar el conteo de iteraciones realizadas
   const [iterationCount, setIterationCount] = useState(0);
-
-  // Estado para almacenar cualquier error durante la evaluación
   const [error, setError] = useState(null);
 
-  // Función para evaluar f'(x)
+  const validateNumber = (value) => {
+    return /^-?\d*$/.test(value);  // Permite números enteros y negativos
+  };
+
+  const handleInputChange = (setter) => (e) => {
+    const value = e.target.value;
+    if (validateNumber(value)) {
+      setter(value);
+    } else {
+      alert('Solo números enteros son permitidos.');
+    }
+  };
+
+  const validateInputs = () => {
+    if (coeffX2 === '' || coeffX === '' || constant === '' || coeffX2 === '-' || coeffX === '-' || constant === '-') {
+      alert('Todos los campos deben tener un número válido.');
+      return false;
+    }
+    return true;
+  };
+
+  const createFunctionString = () => {
+    return `${coeffX2 || '0'} * x^2 + ${coeffX || '0'} * x + ${constant || '0'}`;
+  };
+
   const evaluateDerivative = (x) => {
     try {
-      // Calcula la derivada simbólica de la función respecto a x
+      const functionString = createFunctionString();
       const derived = derivative(functionString, 'x').toString();
-
-      // Evalúa la derivada en el valor actual de x
       const parsedDerivative = parse(derived);
       const derivativeValue = parsedDerivative.evaluate({ x });
-
-      return { value: derivativeValue, expression: derived };
+      return { value: parseFloat(derivativeValue.toFixed(8)), expression: derived };
     } catch (err) {
       throw new Error('Error al evaluar la derivada. Revisa la sintaxis de la función.');
     }
   };
 
-  // Método para resolver el método de Newton-Raphson
   const solve = () => {
+    if (!validateInputs()) {
+      return;
+    }
+
     try {
-      // Reinicia los estados antes de comenzar
       setIterations([]);
       setLastX(null);
       setIterationCount(0);
       setError(null);
 
-      let x = 0; // Valor inicial fijo
+      let x = 0;
       const newIterations = [];
-      const repeatedCount = {}; // Para contar repeticiones
-      let iteration = 0; // Contador de iteraciones
-      const maxIterations = 1000; // Límite de iteraciones para evitar bucles infinitos
-      const tolerance = 1e-8; // Tolerancia para la convergencia
+      const repeatedCount = {};
+      let iteration = 0;
+      const tolerance = 1e-8;
 
-      while (iteration < maxIterations) {
+      while (true) {
         const { value: derivativeValue, expression: derivedExpression } = evaluateDerivative(x);
-
-        // Almacena la expresión de la derivada solo en la primera iteración
         if (iteration === 0) {
           setDerivativeExpression(derivedExpression);
         }
 
-        // Verifica si la derivada es cero para evitar división por cero
-        if (derivativeValue === 0) {
-          setError(`Derivada cero en x = ${x}. Método falla.`);
+        if (derivativeValue === 0 || !isFinite(derivativeValue)) {
           break;
         }
 
-        // Calcula el nuevo valor de x utilizando la fórmula de actualización
         const newX = parseFloat((x - alpha * derivativeValue).toFixed(8));
 
-        // Formato para mostrar las iteraciones
-        newIterations.push(`Iteración ${iteration + 1}:
+        newIterations.push(`Iteración ${iteration + 1}:    x_${iteration} = ${x.toFixed(8)}  f'(x_${iteration}) = ${derivedExpression.replace(/x/g, x.toFixed(8))} = ${derivativeValue.toFixed(8)}  x_${iteration + 1} = ${x.toFixed(8)} - (${alpha.toFixed(2)} × ${derivativeValue.toFixed(8)}) = ${newX.toFixed(8)}  `);
 
-_${iteration} = ${x.toFixed(8)}
-'(${x.toFixed(8)}) = ${derivedExpression.replace(/x/g, x.toFixed(8))} = ${derivativeValue.toFixed(8)}
-_${iteration + 1} = ${x.toFixed(8)} - (${alpha.toFixed(2)} × ${derivativeValue.toFixed(8)}) = ${newX.toFixed(8)}
-`);
-
-        // Contar repeticiones del nuevo valor de x
         const newXKey = newX.toFixed(8);
         repeatedCount[newXKey] = (repeatedCount[newXKey] || 0) + 1;
 
-        // Si el nuevo valor se repite 3 veces, detener la iteración
         if (repeatedCount[newXKey] === 3) {
-          setError('Repetición detectada. Método no converge.');
           break;
         }
 
-        // Verificar convergencia: si el cambio en x es menor que la tolerancia
         if (Math.abs(newX - x) < tolerance) {
           x = newX;
           break;
         }
 
-        // Actualizar x para la siguiente iteración
+        if (Math.abs(newX) > 1e10) {
+          break;
+        }
+
         x = newX;
         iteration++;
       }
 
-      // Actualizar los estados con los resultados
       setIterations(newIterations);
       setLastX(x);
       setIterationCount(iteration);
@@ -113,29 +111,40 @@ _${iteration + 1} = ${x.toFixed(8)} - (${alpha.toFixed(2)} × ${derivativeValue.
 
   return (
     <div className="container">
-      <h1>Método de Newton-Raphson con Alpha</h1>
-
-      {/* Resumen de resultados */}
-      <div className="results-summary">
-        <h3>Número de Iteraciones: {iterationCount}</h3>
-        <h3>Último Valor de x: {lastX !== null ? lastX.toFixed(8) : 'N/A'}</h3>
-        <h3>f'(Último x): {lastX !== null ? evaluateDerivative(lastX).value.toFixed(8) : 'N/A'}</h3>
-        {error && <h3 className="error-message">Error: {error}</h3>}
-      </div>
-
-      {/* Grupo de entradas para la función y el valor de alpha */}
+      <h1>Calculadora gradiente descendente</h1>
       <div className="input-group">
         <label>
-          Función (ejemplo: -3 * x^2 + 12 * x + 100):
+          Coeficiente de x^2:
           <input
             type="text"
-            value={functionString}
-            onChange={(e) => setFunctionString(e.target.value)}
-            placeholder="Ingresa la función f(x)"
+            value={coeffX2}
+            onChange={handleInputChange(setCoeffX2)}
+            placeholder="Ingresa el coeficiente de x^2"
           />
         </label>
       </div>
-
+      <div className="input-group">
+        <label>
+          Coeficiente de x:
+          <input
+            type="text"
+            value={coeffX}
+            onChange={handleInputChange(setCoeffX)}
+            placeholder="Ingresa el coeficiente de x"
+          />
+        </label>
+      </div>
+      <div className="input-group">
+        <label>
+          Término constante:
+          <input
+            type="text"
+            value={constant}
+            onChange={handleInputChange(setConstant)}
+            placeholder="Ingresa el término constante"
+          />
+        </label>
+      </div>
       <div className="input-group">
         <label>
           Alpha (tasa de aprendizaje, por ejemplo: 0.01):
@@ -149,17 +158,11 @@ _${iteration + 1} = ${x.toFixed(8)} - (${alpha.toFixed(2)} × ${derivativeValue.
           />
         </label>
       </div>
-
-      {/* Botón para resolver */}
       <button className="solve-button" onClick={solve}>Resolver</button>
-
-      {/* Mostrar la derivada de la función */}
       <div>
         <h2>Derivada de la función:</h2>
         <p>f'(x) = {derivativeExpression}</p>
       </div>
-
-      {/* Mostrar los resultados de las iteraciones */}
       <div>
         <h2>Resultados:</h2>
         <pre>
@@ -172,4 +175,4 @@ _${iteration + 1} = ${x.toFixed(8)} - (${alpha.toFixed(2)} × ${derivativeValue.
   );
 };
 
-export default NewtonRaphson;
+export default App;
